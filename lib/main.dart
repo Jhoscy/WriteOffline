@@ -1,12 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:appwrite/appwrite.dart';
 
-void main() {
-  runApp(const MyApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  try {
+    const env = String.fromEnvironment('ENV', defaultValue: 'local');
+    debugPrint('Debug - Env: $env');
+    await dotenv.load(fileName: 'environments/.env.$env');
+    debugPrint('Debug - Env file loaded successfully');
+  } catch (e) {
+    debugPrint('Debug - Error loading env: ${e.toString()}');
+    throw Exception('Failed to load environment file: $e');
+  }
+  
+  final String? endpoint = dotenv.env['APPWRITE_ENDPOINT'];
+  final String? projectId = dotenv.env['APPWRITE_PROJECT_ID'];
+  
+  debugPrint('Debug - Appwrite Endpoint: $endpoint');
+  debugPrint('Debug - Appwrite Project ID: $projectId');
+  
+  if (endpoint == null || endpoint.isEmpty || projectId == null || projectId.isEmpty) {
+    throw Exception('Appwrite endpoint or project ID is not set in environment file');
+  }
+  
+  Client client = Client().setEndpoint(endpoint).setProject(projectId);
+  Account account = Account(client);
+  runApp(MyApp(account: account));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
+  const MyApp({super.key, required this.account});
+  final Account account;
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
