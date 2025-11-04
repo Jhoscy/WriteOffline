@@ -1,0 +1,14 @@
+{
+    "version": "1.0.0",
+    "configurations": [
+        {
+            "name": "Local",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart",
+            "args": [
+                "--dart-define=ENV=local"
+            ]
+        },
+    ]
+}
