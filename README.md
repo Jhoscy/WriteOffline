@@ -1,176 +1,427 @@
 # WriteOffline - Offline-First Project Manager
 
-A Flutter application demonstrating offline-first architecture using Isar (local database) and Appwrite (backend) with clean architecture principles and Last-Write-Wins (LWW) conflict resolution.
+A production-ready Flutter application demonstrating true offline-first architecture using Isar (local database) and Appwrite (backend) with clean architecture principles and intelligent auto-sync.
 
-> **Note**: This implementation uses the standard `isar` package (version 3.1.0+1). While the project initially aimed to use `isar_community`, the standard Isar package provides the same offline-first capabilities and is fully compatible with the architecture described.
+> **Note**: This implementation uses `isar_community` package (version 3.3.0-dev.3) with Appwrite's latest TablesDB API for optimal performance and future compatibility.
 
-## Features
+## ✨ Key Features
 
-- **Offline-First**: All data is stored locally first, then synced to the cloud when online
-- **Project Management**: Create, edit, and delete projects with details like budget, dates, and status
-- **Task Management**: Manage tasks for each project with due dates and descriptions
-- **Automatic Sync**: Transparent synchronization with Last-Write-Wins (LWW) conflict resolution
-- **Clean Architecture**: Separation of concerns with domain, data, and presentation layers
-- **State Management**: Powered by Riverpod
-- **Real-time Updates**: Watch streams for live data updates
+- **🔄 Automatic Sync**: Zero-configuration auto-sync based on connectivity
+  - **Online**: Changes sync to cloud immediately
+  - **Offline**: Changes saved locally and queued for sync
+  - **Reconnect**: Pending changes sync automatically within seconds
+  - **No Manual Sync Required**: Works like Google Docs, Notion, etc.
 
-## Architecture
+- **📱 Offline-First**: Full functionality without internet connection
+  - All data stored locally first using Isar
+  - Real-time UI updates from local database
+  - Seamless transition between online/offline modes
 
-The app follows clean architecture principles:
+- **📊 Project Management**: Complete CRUD operations
+  - Create, edit, and delete projects
+  - Track budget, dates, and status
+  - Beautiful Material Design 3 UI
+
+- **✅ Task Management**: Organize work within projects
+  - Manage tasks with due dates
+  - Link tasks to projects
+  - Real-time task updates
+
+- **⚡ Smart Conflict Resolution**:
+  - Last-Write-Wins (LWW) for edits based on timestamps
+  - **Deletion-First**: Deletions always take priority over edits
+  - Prevents accidental data restoration
+
+- **🏗️ Clean Architecture**: Production-ready code structure
+  - Domain, Data, and Presentation layers
+  - Dependency injection via Riverpod
+  - Testable and maintainable
+
+- **🔌 Connectivity-Aware**: Intelligent network handling
+  - Real-time connectivity monitoring
+  - Graceful degradation when offline
+  - Visual indicators for online/offline status
+
+## 🏗️ Architecture
+
+The app follows clean architecture with a hybrid repository pattern for auto-sync:
 
 ```
 lib/
 ├── core/
-│   └── services/          # Core services (connectivity, sync)
+│   └── services/          # Core services
+│       ├── connectivity_service.dart    # Network monitoring
+│       └── sync_orchestrator.dart       # Background sync
 ├── domain/
-│   ├── entities/          # Business entities
+│   ├── entities/          # Business entities (Project, Task)
 │   └── repositories/      # Repository interfaces
 ├── data/
-│   ├── models/            # Data models with Isar annotations
-│   ├── datasources/       # Data sources (local & remote)
-│   │   ├── local/         # Isar implementation
-│   │   └── remote/        # Appwrite implementation
+│   ├── models/            # Data models with Isar & Appwrite mappings
+│   ├── datasources/       # Data sources
+│   │   ├── local/         # Isar (local database)
+│   │   └── remote/        # Appwrite TablesDB (cloud)
 │   └── repositories/      # Repository implementations
+│       ├── *_hybrid_repository.dart    # Auto-sync repositories (NEW!)
+│       └── *_repository_impl.dart      # Legacy local/remote repos
 └── presentation/
-    ├── providers/         # Riverpod providers
-    └── screens/           # UI screens
+    ├── providers/         # Riverpod providers & state
+    └── screens/           # UI screens (Projects, Tasks, Forms)
 ```
 
-## Tech Stack
+### Hybrid Repository Pattern
 
-- **Flutter**: UI framework
-- **Isar Community**: Local database
-- **Appwrite**: Backend as a Service
-- **Riverpod**: State management
-- **Connectivity Plus**: Network status monitoring
+The **Hybrid Repository** automatically routes operations based on connectivity:
 
-## Setup Instructions
+```
+User Action → Hybrid Repository
+              ↓
+       Check Connectivity
+          ↙        ↘
+      Online      Offline
+        ↓            ↓
+     Remote       Local
+   + Cache     (needsSync)
+        ↓            ↓
+     Local DB ← ─ ─ ┘
+        ↓
+    UI Stream
+```
 
-### 1. Install Dependencies
+**Benefits:**
+- No manual sync button clicks
+- Automatic fallback on network errors
+- Local-first UI for instant feedback
+- Smart caching strategy
+
+## 🛠️ Tech Stack
+
+- **Flutter 3.x**: Cross-platform UI framework
+- **Isar Community 3.3.0-dev.3**: Fast local NoSQL database with real-time queries
+- **Appwrite 20.3.0**: Backend as a Service (using TablesDB API)
+- **Riverpod 3.0**: Modern state management and dependency injection
+- **Connectivity Plus**: Real-time network status monitoring
+- **UUID**: Unique identifier generation
+- **Flutter Dotenv**: Environment configuration
+
+## 🚀 Quick Start
+
+See [QUICK_START.md](QUICK_START.md) for a quick overview of the auto-sync feature.
+
+### 1. Prerequisites
+
+- Flutter 3.x or higher
+- Dart 3.0 or higher
+- FVM (recommended for version management)
+- An Appwrite account (free at [cloud.appwrite.io](https://cloud.appwrite.io))
+
+### 2. Install Dependencies
 
 ```bash
 flutter pub get
 ```
 
-### 2. Generate Isar Database Code
+### 3. Generate Isar Database Code
 
 ```bash
-flutter pub run build_runner build --delete-conflicting-outputs
+dart run build_runner build --delete-conflicting-outputs
 ```
 
-### 3. Configure Appwrite
+### 4. Configure Appwrite Backend
 
-1. Create an account at [Appwrite Cloud](https://cloud.appwrite.io/) or self-host
+**Option A: Use the Setup Script (Recommended)**
+See [SETUP.md](SETUP.md) for detailed Appwrite configuration instructions.
+
+**Option B: Manual Setup**
+
+1. Create an Appwrite account at [cloud.appwrite.io](https://cloud.appwrite.io)
 2. Create a new project
-3. Create a new database
-4. Create two collections:
-   - **projects** with attributes:
-     - projectName (string, max 128)
-     - description (string)
-     - startDate (datetime, optional)
-     - endDate (datetime, optional)
-     - budget (double)
-     - status (string)
-     - createdAt (datetime)
-     - updatedAt (datetime)
-     - isDeleted (boolean)
-   - **tasks** with attributes:
-     - name (string)
-     - description (string)
-     - dueDate (datetime, optional)
-     - projectId (string)
-     - createdAt (datetime)
-     - updatedAt (datetime)
-     - isDeleted (boolean)
+3. Create a database
+4. Create two tables (collections):
 
-### 4. Configure Environment Variables
+**Projects Table:**
+```
+Table ID: projects
+Attributes:
+- projectName (string, 128 chars)
+- description (string, 1000 chars)
+- startDate (datetime, optional)
+- endDate (datetime, optional)
+- budget (double)
+- status (string, 50 chars)
+- createdAt (datetime, required)
+- updatedAt (datetime, required)
+- isDeleted (boolean, default: false)
+```
 
-1. Copy `environments/.env.example` to `environments/.env`
-2. Fill in your Appwrite credentials:
+**Tasks Table:**
+```
+Table ID: tasks
+Attributes:
+- name (string, 128 chars)
+- description (string, 1000 chars)
+- dueDate (datetime, optional)
+- projectId (string, 36 chars)
+- createdAt (datetime, required)
+- updatedAt (datetime, required)
+- isDeleted (boolean, default: false)
+```
+
+### 5. Configure Environment
+
+1. Create `environments/.env.local`:
 
 ```env
 APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
-APPWRITE_PROJECT_ID=your_project_id
-APPWRITE_DATABASE_ID=your_database_id
+APPWRITE_PROJECT_ID=your_project_id_here
+APPWRITE_DATABASE_ID=your_database_id_here
 APPWRITE_PROJECTS_COLLECTION_ID=projects
 APPWRITE_TASKS_COLLECTION_ID=tasks
 ```
 
-### 5. Run the App
+2. Get your IDs from Appwrite Console → Settings
+
+### 6. Run the App
 
 ```bash
+# Using FVM (recommended)
+fvm flutter run
+
+# Or standard Flutter
 flutter run
+
+# For specific environment
+flutter run --dart-define=ENV=local
 ```
 
-## How It Works
+That's it! The app will automatically handle sync based on connectivity. ✨
 
-### Offline-First Flow
+## 📖 How Auto-Sync Works
 
-1. **User Action**: User creates/updates/deletes a project or task
-2. **Local Write**: Data is immediately written to Isar (local database)
-3. **Sync Flag**: Item is marked with `needsSync = true`
-4. **Background Sync**: When online, sync orchestrator:
-   - Pushes local changes to remote (Appwrite)
-   - Pulls remote changes to local
-   - Resolves conflicts using LWW (Last-Write-Wins)
-5. **Transparent**: User doesn't need to worry about sync status
-
-### LWW Conflict Resolution
-
-When the same entity is modified both locally and remotely:
-- Compare `updatedAt` timestamps
-- The version with the latest timestamp wins
-- Losing version is overwritten
-
-### Data Flow
+### When You're ONLINE 🟢
 
 ```
-UI Layer (Riverpod Providers)
-    ↓
-Domain Layer (Entities & Repository Interfaces)
-    ↓
-Data Layer (Repository Implementations)
-    ↓
-Local Datasource (Isar) ←→ Sync Orchestrator ←→ Remote Datasource (Appwrite)
+User creates/edits/deletes → Hybrid Repository
+                              ↓
+                      Try write to Remote (Appwrite)
+                              ↓
+                     Success? → Update Local Cache
+                              ↓
+                         UI Updates Instantly
 ```
 
-## Key Components
+**Result:** Changes sync to cloud immediately. Available on all devices.
 
-### Sync Orchestrator
-- Monitors connectivity changes
-- Performs periodic sync (every 5 minutes)
-- Implements LWW conflict resolution
-- Manages sync status
+### When You're OFFLINE 🔴
 
-### Repositories
-- `ProjectLocalRepositoryImpl`: Local project operations
-- `ProjectRemoteRepositoryImpl`: Remote project operations
-- `TaskLocalRepositoryImpl`: Local task operations
-- `TaskRemoteRepositoryImpl`: Remote task operations
+```
+User creates/edits/deletes → Hybrid Repository
+                              ↓
+                      Save to Local (Isar)
+                              ↓
+                      Mark needsSync = true
+                              ↓
+                         UI Updates Instantly
+```
+
+**Result:** Changes saved locally. Will sync when back online.
+
+### When You RECONNECT 🔄
+
+```
+Connectivity Restored
+        ↓
+Sync Orchestrator Triggered
+        ↓
+1. Push pending local changes (needsSync=true)
+2. Pull remote changes from other devices
+3. Apply smart conflict resolution
+4. Update local cache
+        ↓
+All Devices In Sync!
+```
+
+**Timing:** Usually syncs within 1-5 seconds of reconnection.
+
+### Smart Conflict Resolution
+
+**For Edits - Last Write Wins (LWW):**
+```
+Device A edits at 10:00 AM → updatedAt: 10:00
+Device B edits at 11:00 AM → updatedAt: 11:00
+Sync → Device B wins (newer timestamp)
+```
+
+**For Deletions - Deletion Always Wins:**
+```
+Device A deletes at 10:00 AM → isDeleted: true
+Device B edits at 11:00 AM → isDeleted: false
+Sync → Device A wins (deletion takes priority)
+```
+
+**Why?** Deletions are intentional user actions that should take precedence over any edit, preventing accidental data restoration.
+
+### Preserving Pending Changes
+
+When fetching from remote, the hybrid repository:
+1. Checks if local has `needsSync: true`
+2. If yes, keeps local version (don't overwrite pending changes)
+3. If no, updates with remote version
+4. Sync orchestrator then pushes pending changes
+
+This ensures offline changes are never lost when going back online.
+
+## 🔑 Key Components
+
+### Hybrid Repositories (Auto-Sync Layer)
+- **`ProjectHybridRepository`**: Routes project operations based on connectivity
+- **`TaskHybridRepository`**: Routes task operations based on connectivity
+- Automatically writes to remote when online
+- Falls back to local when offline
+- Preserves pending changes (`needsSync: true`)
+
+### Sync Orchestrator (Background Sync)
+- Monitors connectivity changes via `ConnectivityService`
+- Triggers sync immediately on reconnection
+- Performs periodic sync every 5 minutes when online
+- Implements deletion-first + LWW conflict resolution
+- Manages sync status (idle, syncing, success, error)
 
 ### Data Sources
-- Abstracted to allow swapping backends (Appwrite, Supabase, etc.)
-- Local: Isar database
-- Remote: Appwrite (can be replaced with other backends)
+**Local (Isar):**
+- `IsarLocalDatasource`: Base Isar implementation
+- `ProjectLocalDatasource`: Project-specific operations
+- `TaskLocalDatasource`: Task-specific operations
+- Fast NoSQL database with real-time queries
+- Watches for data changes via streams
 
-## Project Status
+**Remote (Appwrite TablesDB):**
+- `AppwriteRemoteDatasource`: Base Appwrite client setup
+- `AppwriteProjectRemoteDatasource`: Project cloud operations
+- `AppwriteTaskRemoteDatasource`: Task cloud operations
+- Uses latest TablesDB API (not deprecated Databases API)
+- Easily swappable with Supabase, Firebase, etc.
 
-✅ Fully functional offline-first app with:
-- Complete CRUD operations for projects and tasks
-- Automatic sync with LWW conflict resolution
-- Clean architecture implementation
-- Riverpod state management
-- Beautiful Material Design UI
+### Services
+- **`ConnectivityService`**: Real-time network monitoring
+- **`SyncOrchestrator`**: Coordinates sync operations
+- Both initialized automatically via Riverpod
 
-## Future Enhancements
+## 📊 Project Status
 
-- User authentication
-- Collaborative features
-- File attachments
-- Search and filtering
-- Analytics and reports
-- Dark mode
+### ✅ Completed Features
 
-## License
+- **Auto-Sync Architecture**: Zero-config automatic synchronization
+- **Hybrid Repository Pattern**: Smart online/offline routing
+- **Deletion-First Sync**: Deletions always take priority
+- **Appwrite TablesDB Integration**: Using latest non-deprecated API
+- **Complete CRUD**: Projects and tasks fully functional
+- **Conflict Resolution**: LWW for edits, deletion-first for removals
+- **Real-time UI**: Local-first with instant updates
+- **Connectivity Monitoring**: Live online/offline indicators
+- **Clean Architecture**: Production-ready code structure
+- **State Management**: Riverpod with dependency injection
+- **Error Handling**: Graceful fallbacks and user feedback
+- **Material Design 3**: Beautiful, modern UI
 
-MIT License
+### 🧪 Testing Checklist
+
+- ✅ Create/edit/delete projects while online → Syncs immediately
+- ✅ Create/edit/delete projects while offline → Syncs on reconnect
+- ✅ Delete project offline → Deletion syncs correctly (not restored)
+- ✅ Multi-device scenario → Changes merge correctly
+- ✅ Network errors → Graceful fallback to local
+- ✅ Timestamp conflicts → LWW resolution works
+- ✅ Flutter analyze → No issues or deprecated members
+
+### 🚀 Future Enhancements
+
+**Phase 1 - Core Features:**
+- [ ] User authentication and authorization
+- [ ] Multi-user collaboration
+- [ ] Real-time sync using Appwrite Realtime API
+- [ ] Pagination for large datasets
+
+**Phase 2 - Extended Features:**
+- [ ] File attachments and media
+- [ ] Advanced search and filtering
+- [ ] Data export (CSV, PDF)
+- [ ] Analytics and reports
+- [ ] Notifications and reminders
+
+**Phase 3 - Polish:**
+- [ ] Dark mode
+- [ ] Offline indicators on items
+- [ ] Sync queue UI (show pending changes)
+- [ ] Retry mechanism with exponential backoff
+- [ ] Data compression for faster sync
+
+## 📚 Documentation
+
+- **[QUICK_START.md](QUICK_START.md)** - Quick reference guide
+- **[AUTO_SYNC_GUIDE.md](AUTO_SYNC_GUIDE.md)** - Complete technical architecture
+- **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - What changed and why
+- **[CHANGES.md](CHANGES.md)** - Detailed change log
+- **[SETUP.md](SETUP.md)** - Appwrite configuration guide
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - System architecture details
+
+## 🧪 Testing
+
+### Unit Tests
+```bash
+flutter test
+```
+
+### Integration Tests
+```bash
+flutter test integration_test
+```
+
+### Code Analysis
+```bash
+# Using FVM
+fvm flutter analyze
+
+# Standard Flutter
+flutter analyze
+```
+
+## 🐛 Known Issues
+
+None! All major issues have been resolved:
+- ✅ Offline deletions now sync correctly
+- ✅ No deprecated API warnings
+- ✅ Pending changes preserved during reconnection
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📝 License
+
+MIT License - see LICENSE file for details
+
+## 🙏 Acknowledgments
+
+- **Isar** - Fast and lightweight NoSQL database
+- **Appwrite** - Open-source Backend as a Service
+- **Riverpod** - Modern Flutter state management
+- **Flutter Team** - Amazing framework
+
+## 📧 Support
+
+For questions or issues:
+- Check the [documentation](QUICK_START.md)
+- Review [ARCHITECTURE.md](ARCHITECTURE.md) for technical details
+- Open an issue on GitHub
+
+---
+
+**Built with ❤️ using Flutter and Offline-First principles**
+
+*Last Updated: November 2025*
