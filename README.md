@@ -1,4 +1,4 @@
-# WriteOffline - Offline-First Project Manager
+# Building Resilient Apps: Offline-First using Isar + Appwrite
 
 A production-ready Flutter application demonstrating true offline-first architecture using Isar (local database) and Appwrite (backend) with clean architecture principles and intelligent auto-sync.
 
