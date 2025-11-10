@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../domain/entities/task.dart';
 import '../../providers/task_providers.dart';
+import '../../theme/neobrutalism_theme.dart';
 
 class TaskFormScreen extends ConsumerStatefulWidget {
   final String projectId;
@@ -45,7 +46,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEditing ? 'Edit Task' : 'New Task'),
+        title: Text(isEditing ? 'Edit Task' : 'New Task', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
       ),
       body: Form(
         key: _formKey,
@@ -81,51 +82,77 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
               },
             ),
             const SizedBox(height: 16),
-            ListTile(
-              title: const Text('Due Date'),
-              subtitle: Text(
-                _dueDate != null 
-                    ? DateFormat('MMM dd, yyyy').format(_dueDate!) 
-                    : 'Not set',
+            Container(
+              decoration: NeobrutalismTheme.neobrutalismBox(
+                color: NeobrutalismTheme.primaryWhite,
               ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (_dueDate != null)
-                    IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        setState(() {
-                          _dueDate = null;
-                        });
-                      },
-                    ),
-                  const Icon(Icons.calendar_today),
-                ],
+              child: ListTile(
+                title: const Text('Due Date', style: TextStyle(fontWeight: FontWeight.w700)),
+                subtitle: Text(
+                  _dueDate != null 
+                      ? DateFormat('MMM dd, yyyy').format(_dueDate!) 
+                      : 'Not set',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_dueDate != null)
+                      IconButton(
+                        icon: const Icon(Icons.clear, color: NeobrutalismTheme.primaryBlack),
+                        onPressed: () {
+                          setState(() {
+                            _dueDate = null;
+                          });
+                        },
+                      ),
+                    const Icon(Icons.calendar_today, color: NeobrutalismTheme.primaryBlack),
+                  ],
+                ),
+                onTap: () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: _dueDate ?? DateTime.now(),
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime(2100),
+                  );
+                  if (date != null) {
+                    setState(() {
+                      _dueDate = date;
+                    });
+                  }
+                },
               ),
-              onTap: () async {
-                final date = await showDatePicker(
-                  context: context,
-                  initialDate: _dueDate ?? DateTime.now(),
-                  firstDate: DateTime(2000),
-                  lastDate: DateTime(2100),
-                );
-                if (date != null) {
-                  setState(() {
-                    _dueDate = date;
-                  });
-                }
-              },
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _saveTask,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
+            Container(
+              decoration: NeobrutalismTheme.neobrutalismBox(
+                color: NeobrutalismTheme.primaryRed,
+                shadow: NeobrutalismTheme.buttonShadow,
               ),
-              child: Text(
-                isEditing ? 'Update Task' : 'Create Task',
-                style: const TextStyle(fontSize: 16),
+              child: ElevatedButton(
+                onPressed: _saveTask,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(NeobrutalismTheme.borderRadiusSmall),
+                    side: const BorderSide(
+                      color: NeobrutalismTheme.primaryBlack,
+                      width: NeobrutalismTheme.borderWidth,
+                    ),
+                  ),
+                ),
+                child: Text(
+                  isEditing ? 'Update Task' : 'Create Task',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: NeobrutalismTheme.primaryWhite,
+                    letterSpacing: 1,
+                  ),
+                ),
               ),
             ),
           ],
