@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../domain/entities/task.dart';
 import '../../providers/task_providers.dart';
+import '../../theme/app_theme.dart';
 
 class TaskFormScreen extends ConsumerStatefulWidget {
   final String projectId;
@@ -50,14 +51,23 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
           children: [
+            // Text(
+            //   isEditing ? 'Edit Task' : 'Create New Task',
+            //   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            //     fontWeight: FontWeight.w600,
+            //     letterSpacing: -0.6,
+            //   ),
+            // ),
+            const SizedBox(height: 32),
             TextFormField(
               controller: _nameController,
               decoration: const InputDecoration(
                 labelText: 'Task Name *',
-                border: OutlineInputBorder(),
+                hintText: 'Enter task name',
               ),
+              style: Theme.of(context).textTheme.bodyLarge,
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
                   return 'Please enter a task name';
@@ -65,14 +75,16 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             TextFormField(
               controller: _descriptionController,
               decoration: const InputDecoration(
                 labelText: 'Description *',
-                border: OutlineInputBorder(),
+                hintText: 'Enter task description',
+                alignLabelWithHint: true,
               ),
-              maxLines: 4,
+              maxLines: 6,
+              style: Theme.of(context).textTheme.bodyLarge,
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
                   return 'Please enter a description';
@@ -80,27 +92,53 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                 return null;
               },
             ),
-            const SizedBox(height: 16),
-            ListTile(
-              title: const Text('Due Date'),
+            const SizedBox(height: 24),
+            Container(
+              decoration: BoxDecoration(
+                color: context.surfaceColor,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: context.greyColor(300)),
+              ),
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                title: Text(
+                  'Due Date',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: context.onSurfaceColor,
+                  ),
+                ),
               subtitle: Text(
                 _dueDate != null 
                     ? DateFormat('MMM dd, yyyy').format(_dueDate!) 
                     : 'Not set',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: _dueDate != null 
+                        ? context.greyColor(700) 
+                        : context.greyColor(400),
+                  ),
               ),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (_dueDate != null)
                     IconButton(
-                      icon: const Icon(Icons.clear),
+                        icon: Icon(
+                          Icons.clear,
+                          size: 18,
+                          color: context.greyColor(600),
+                        ),
                       onPressed: () {
                         setState(() {
                           _dueDate = null;
                         });
                       },
                     ),
-                  const Icon(Icons.calendar_today),
+                    Icon(
+                      Icons.calendar_today,
+                      size: 20,
+                      color: context.greyColor(600),
+                    ),
                 ],
               ),
               onTap: () async {
@@ -117,15 +155,15 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                 }
               },
             ),
-            const SizedBox(height: 24),
+            ),
+            const SizedBox(height: 32),
             ElevatedButton(
               onPressed: _saveTask,
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                padding: const EdgeInsets.symmetric(vertical: 18),
               ),
               child: Text(
                 isEditing ? 'Update Task' : 'Create Task',
-                style: const TextStyle(fontSize: 16),
               ),
             ),
           ],
@@ -170,6 +208,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                 ? 'Task updated successfully' 
                 : 'Task created successfully',
           ),
+          behavior: SnackBarBehavior.floating,
         ),
       );
     }
